@@ -1,0 +1,26 @@
+{
+  "name": "postgres-cdc-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "appuser",
+    "database.password": "apppass",
+    "database.dbname": "appdb",
+    "database.server.name": "appdb",
+    "table.include.list": "public.customers,public.orders",
+    "plugin.name": "pgoutput",
+    "slot.name": "debezium_slot",
+    "publication.name": "debezium_pub",
+    "snapshot.mode": "initial",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "key.converter.schema.registry.url": "http://schema-registry:8081",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "dlq.customers",
+    "errors.deadletterqueue.context.headers.enable": "true",
+    "errors.log.enable": "true",
+    "errors.log.include.messages": "true"
+  }
+}
