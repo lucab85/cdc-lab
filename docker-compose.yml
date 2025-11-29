@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16
+    command: ["postgres", "-c", "wal_level=logical"]
     environment:
       POSTGRES_USER: appuser
       POSTGRES_PASSWORD: apppass
@@ -67,27 +68,25 @@ services:
       start_period: 30s
 
   connect:
-    image: confluentinc/cp-kafka-connect:7.6.0
+    image: debezium/connect:2.5
     depends_on:
       kafka:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
     environment:
-      CONNECT_BOOTSTRAP_SERVERS: kafka:9092
-      CONNECT_REST_ADVERTISED_HOST_NAME: connect
-      CONNECT_GROUP_ID: "1"
-      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
-      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
-      CONNECT_STATUS_STORAGE_TOPIC: connect-status
-      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
-      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_PLUGIN_PATH: /usr/share/java,/etc/kafka-connect/jars
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: "1"
+      CONFIG_STORAGE_TOPIC: connect-configs
+      OFFSET_STORAGE_TOPIC: connect-offsets
+      STATUS_STORAGE_TOPIC: connect-status
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
     ports:
       - "8083:8083"
     volumes:
@@ -100,7 +99,9 @@ services:
       start_period: 60s
 
   flink-jobmanager:
-    image: flink:1.18-scala_2.12
+    build:
+      context: ./docker/flink
+      dockerfile: Dockerfile
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
       - |
@@ -119,7 +120,9 @@ services:
       - ./sql/flink:/opt/flink/usrlib
 
   flink-taskmanager:
-    image: flink:1.18-scala_2.12
+    build:
+      context: ./docker/flink
+      dockerfile: Dockerfile
     depends_on: [flink-jobmanager]
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
@@ -158,7 +161,37 @@ services:
       minio:
         condition: service_healthy
     entrypoint: /bin/sh
-    command: -c "mc alias set local http://minio:9000 minioadmin minioadmin && mc mb -p local/iceberg-warehouse || true"
+    command: -c "mc alias set local http://minio:9000 minioadmin minioadmin && mc mb -p local/warehouse || true"
+
+  hive-metastore-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  hive-metastore:
+    image: apache/hive:4.0.0
+    depends_on:
+      hive-metastore-db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      SERVICE_OPTS: >-
+        -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+        -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://hive-metastore-db:5432/metastore
+        -Djavax.jdo.option.ConnectionUserName=hive
+        -Djavax.jdo.option.ConnectionPassword=hive
+    ports:
+      - "9083:9083"
 
   trino:
     image: trinodb/trino

@@ -1,3 +1,4 @@
+-- Canonical customers table - upserts to a Kafka topic
 CREATE TABLE customers_canonical (
   customer_id   INT,
   full_name     STRING,
@@ -7,14 +8,16 @@ CREATE TABLE customers_canonical (
 ) WITH (
   'connector' = 'upsert-kafka',
   'topic' = 'customers_canonical',
-  'key.format' = 'avro',
-  'value.format' = 'avro'
+  'properties.bootstrap.servers' = 'kafka:9092',
+  'key.format' = 'json',
+  'value.format' = 'json'
 );
 
+-- Transform and load from raw to canonical
 INSERT INTO customers_canonical
 SELECT
   customer_id,
   COALESCE(full_name, first_name || ' ' || last_name) AS full_name,
-  COALESCE(email, customer_id || '@example.local')    AS primary_email,
-  CAST(country AS STRING)                             AS country_code
+  COALESCE(email, CAST(customer_id AS STRING) || '@example.local') AS primary_email,
+  CAST(country AS STRING) AS country_code
 FROM customers_raw;

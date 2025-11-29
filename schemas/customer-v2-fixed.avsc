@@ -4,10 +4,16 @@
   "namespace": "demo.avro",
   "fields": [
     {"name": "customer_id", "type": "int"},
-    {"name": "first_name", "type": "string"},
-    {"name": "last_name", "type": "string"},
     {"name": "email", "type": "string"},
-    {"name": "country", "type": "string"},
-    {"name": "full_name", "type": ["null", "string"], "default": null}
+    {
+      "name": "primary_email",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "country",
+      "type": "string",
+      "default": "UNKNOWN"
+    }
   ]
 }
