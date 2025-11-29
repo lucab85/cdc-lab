@@ -1,11 +1,13 @@
--- Create Iceberg catalog backed by S3 (MinIO)
+-- Create Iceberg catalog backed by REST catalog server
 CREATE CATALOG lakehouse WITH (
   'type' = 'iceberg',
-  'catalog-type' = 'hadoop',
-  'warehouse' = 's3a://warehouse/',
+  'catalog-type' = 'rest',
+  'uri' = 'http://iceberg-rest:8181',
+  'warehouse' = 's3://warehouse/',
+  'io-impl' = 'org.apache.iceberg.aws.s3.S3FileIO',
   's3.endpoint' = 'http://minio:9000',
-  's3.access-key' = 'minioadmin',
-  's3.secret-key' = 'minioadmin',
+  's3.access-key-id' = 'minioadmin',
+  's3.secret-access-key' = 'minioadmin',
   's3.path-style-access' = 'true'
 );
 
