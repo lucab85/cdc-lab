@@ -18,6 +18,7 @@ echo -e "${BLUE}========================================${NC}"
 
 # Step 1: Show current customers
 echo -e "\n${CYAN}Step 1: Check current customers in PostgreSQL${NC}"
+docker compose up -d
 docker exec cdc-lab-postgres-1 psql -U appuser -d appdb -c "SELECT * FROM customers;"
 read -p "Press Enter to continue..."
 
@@ -67,10 +68,59 @@ docker exec cdc-lab-postgres-1 psql -U appuser -d appdb -c "
 UPDATE customers SET email = 'ana.new@example.com' WHERE customer_id = 1;
 "
 echo -e "${GREEN}✓ Email updated${NC}"
-echo -e "\n${YELLOW}Check the canonical table - should show only one row per customer with latest values${NC}"
-echo "SELECT * FROM customers_canonical ORDER BY customer_id;"
+read -p "Press Enter to continue..."
+
+# Step 7: Query options
+echo -e "\n${CYAN}Step 7: Query the transformed data${NC}"
+echo -e "${YELLOW}You have multiple options to verify the transformations:${NC}"
+echo ""
+echo -e "${BLUE}Option A: Query source data in Trino (PostgreSQL catalog)${NC}"
+echo -e "  docker exec -it cdc-lab-trino-1 trino --catalog postgres --schema public"
+echo -e "  ${GREEN}SELECT * FROM customers ORDER BY customer_id;${NC}"
+echo ""
+echo -e "${BLUE}Option B: Query CDC topic in Flink SQL${NC}"
+echo -e "  docker exec -it cdc-lab-flink-jobmanager-1 ./bin/sql-client.sh"
+echo -e "  ${GREEN}-- First create the source table (paste from sql/flink/create_customers_raw.sql)${NC}"
+echo -e "  ${GREEN}SELECT * FROM customers_raw;${NC}"
+echo ""
+echo -e "${BLUE}Option C: Query the upsert-kafka canonical table in Flink SQL${NC}"
+echo -e "  ${GREEN}-- After creating customers_canonical table:${NC}"
+echo -e "  ${GREEN}SELECT * FROM customers_canonical ORDER BY customer_id;${NC}"
+echo ""
+echo -e "${BLUE}Option D: Read from Kafka topic directly${NC}"
+echo -e "  docker exec cdc-lab-kafka-1 kafka-console-consumer \\"
+echo -e "    --bootstrap-server localhost:9092 \\"
+echo -e "    --topic appdb.public.customers \\"
+echo -e "    --from-beginning --max-messages 5"
+read -p "Press Enter to continue..."
+
+# Step 8: Show the final state in PostgreSQL
+echo -e "\n${CYAN}Step 8: Verify final state in PostgreSQL${NC}"
+echo -e "${YELLOW}Current customers table with all changes:${NC}"
+docker exec cdc-lab-postgres-1 psql -U appuser -d appdb -c "
+SELECT customer_id, first_name, last_name, email, country, full_name FROM customers ORDER BY customer_id;
+"
+
+echo -e "\n${YELLOW}Let's also check the Kafka topic has all our changes:${NC}"
+docker exec cdc-lab-kafka-1 kafka-console-consumer \
+    --bootstrap-server localhost:9092 \
+    --topic appdb.public.customers \
+    --from-beginning \
+    --max-messages 5 \
+    --timeout-ms 5000 2>/dev/null | head -10
 
 echo -e "\n${BLUE}========================================${NC}"
 echo -e "${GREEN}  M1V3 Demo Complete!${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo -e "Demonstrated: Schema evolution, COALESCE for NULL handling, upsert semantics"
+echo ""
+echo -e "${YELLOW}Key Takeaways:${NC}"
+echo "  1. Schema changes (new columns) flow through CDC automatically"
+echo "  2. COALESCE handles NULL values and provides defaults"
+echo "  3. PRIMARY KEY enables upsert semantics (one row per key)"
+echo "  4. Flink SQL transforms raw CDC events into clean canonical tables"
+echo ""
+echo -e "${YELLOW}Next Steps:${NC}"
+echo "  • Run Flink SQL to create customers_canonical table"
+echo "  • Start the INSERT INTO job to continuously transform data"
+echo "  • Query from Trino once Iceberg tables are populated"
