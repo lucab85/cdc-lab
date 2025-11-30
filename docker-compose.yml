@@ -104,6 +104,9 @@ services:
       dockerfile: Dockerfile
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
       - |
         FLINK_PROPERTIES=
           jobmanager.rpc.address: flink-jobmanager
@@ -126,6 +129,9 @@ services:
     depends_on: [flink-jobmanager]
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
       - |
         FLINK_PROPERTIES=
           jobmanager.rpc.address: flink-jobmanager

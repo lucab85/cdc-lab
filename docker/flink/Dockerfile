@@ -20,9 +20,9 @@ RUN mkdir -p /opt/flink/lib && \
     # PostgreSQL JDBC driver
     curl -L -o /opt/flink/lib/postgresql-42.7.1.jar \
       https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.1/postgresql-42.7.1.jar && \
-    # Iceberg Flink runtime
-    curl -L -o /opt/flink/lib/iceberg-flink-runtime-1.18-1.4.3.jar \
-      https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-runtime-1.18/1.4.3/iceberg-flink-runtime-1.18-1.4.3.jar && \
+    # Iceberg Flink runtime (using correct artifact path)
+    curl -fSL -o /opt/flink/lib/iceberg-flink-runtime-1.18-1.5.2.jar \
+      https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-flink-runtime-1.18/1.5.2/iceberg-flink-runtime-1.18-1.5.2.jar && \
     # AWS bundle for S3
     curl -L -o /opt/flink/lib/flink-s3-fs-hadoop-1.18.1.jar \
       https://repo1.maven.org/maven2/org/apache/flink/flink-s3-fs-hadoop/1.18.1/flink-s3-fs-hadoop-1.18.1.jar && \
@@ -31,4 +31,22 @@ RUN mkdir -p /opt/flink/lib && \
       https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar && \
     # AWS SDK bundle
     curl -L -o /opt/flink/lib/aws-java-sdk-bundle-1.12.367.jar \
-      https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.367/aws-java-sdk-bundle-1.12.367.jar
+      https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.367/aws-java-sdk-bundle-1.12.367.jar && \
+    # Hadoop common (required for Iceberg)
+    curl -fSL -o /opt/flink/lib/hadoop-common-3.3.4.jar \
+      https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-common/3.3.4/hadoop-common-3.3.4.jar && \
+    # Hadoop HDFS client (required for HdfsConfiguration class)
+    curl -fSL -o /opt/flink/lib/hadoop-hdfs-client-3.3.4.jar \
+      https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-hdfs-client/3.3.4/hadoop-hdfs-client-3.3.4.jar && \
+    # Woodstox core (XML parser required by Hadoop)
+    curl -fSL -o /opt/flink/lib/woodstox-core-5.4.0.jar \
+      https://repo1.maven.org/maven2/com/fasterxml/woodstox/woodstox-core/5.4.0/woodstox-core-5.4.0.jar && \
+    # Stax2 API
+    curl -fSL -o /opt/flink/lib/stax2-api-4.2.1.jar \
+      https://repo1.maven.org/maven2/org/codehaus/woodstox/stax2-api/4.2.1/stax2-api-4.2.1.jar && \
+    # Commons configuration
+    curl -fSL -o /opt/flink/lib/commons-configuration2-2.8.0.jar \
+      https://repo1.maven.org/maven2/org/apache/commons/commons-configuration2/2.8.0/commons-configuration2-2.8.0.jar && \
+    # Iceberg AWS bundle (includes AWS SDK v2 for S3FileIO)
+    curl -fSL -o /opt/flink/lib/iceberg-aws-bundle-1.5.2.jar \
+      https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/1.5.2/iceberg-aws-bundle-1.5.2.jar
