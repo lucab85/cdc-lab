@@ -2,13 +2,9 @@ name: Validate Schemas
 
 on:
   push:
-    paths:
-      - 'schemas/*.avsc'
-      - 'ci/validate_schemas.py'
+    branches: [main]
   pull_request:
-    paths:
-      - 'schemas/*.avsc'
-      - 'ci/validate_schemas.py'
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -21,9 +17,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install fastavro
 
       - name: Validate Avro Schemas
         run: python ci/validate_schemas.py

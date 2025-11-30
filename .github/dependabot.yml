@@ -1,34 +1,8 @@
 version: 2
 updates:
-  # Enable version updates for Docker
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "lucab85"
-    assignees:
-      - "lucab85"
-
-  # Enable version updates for GitHub Actions
+  # Enable version updates for GitHub Actions only
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     open-pull-requests-limit: 3
-    reviewers:
-      - "lucab85"
-    assignees:
-      - "lucab85"
-
-  # Enable version updates for Python packages (if any requirements files are added)
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
-    reviewers:
-      - "lucab85"
-    assignees:
-      - "lucab85"
