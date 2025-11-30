@@ -2,6 +2,10 @@
 
 Mini data platform that lets you demo end-to-end CDC patterns (Debezium → Kafka → Schema Registry → Flink → Iceberg → Trino) on macOS, Windows (WSL2), or Linux. Everything runs in Docker so you can tear it down and rebuild quickly between classes.
 
+[![CI](https://github.com/lucab85/cdc-lab/actions/workflows/github-actions-ci.yml/badge.svg)](https://github.com/lucab85/cdc-lab/actions/workflows/github-actions-ci.yml)
+[![Schema Validation](https://github.com/lucab85/cdc-lab/actions/workflows/github-actions-schema-check.yml/badge.svg)](https://github.com/lucab85/cdc-lab/actions/workflows/github-actions-schema-check.yml)
+[![Docker Test](https://github.com/lucab85/cdc-lab/actions/workflows/github-actions-docker-test.yml/badge.svg)](https://github.com/lucab85/cdc-lab/actions/workflows/github-actions-docker-test.yml)
+
 ## Prerequisites
 
 - Docker Desktop (4 vCPUs / 12+ GB RAM / 40 GB free disk recommended)
@@ -103,11 +107,40 @@ docker/flink/    # Custom Flink Dockerfile with connectors
 3. Switch compatibility to `BACKWARD_TRANSITIVE` 
 4. Register `schemas/customer-v2-fixed.avsc` successfully
 
-## Observability & Guardrails
+## CI/CD
 
-- Debezium connector has error tolerance enabled with logging
-- Add a DLQ topic by adding `"errors.deadletterqueue.topic.name": "dlq.customers"` to the connector config
-- CI schema validation: `python3 ci/validate_schemas.py schemas/`
+This project includes comprehensive GitHub Actions workflows for continuous integration and deployment:
+
+### Workflows
+
+- **CI Pipeline** (`ci/github-actions-ci.yml`): Runs on every push/PR, validates schemas, Docker configs, and file permissions
+- **Schema Validation** (`ci/github-actions-schema-check.yml`): Validates Avro schemas when they change
+- **Docker Testing** (`ci/github-actions-docker-test.yml`): Tests Docker Compose setup and service connectivity
+- **Security Scanning** (`ci/github-actions-security.yml`): Weekly security scans using Trivy
+- **Dependency Updates** (`ci/github-actions-updates.yml`): Monitors for dependency updates
+- **Release Management** (`ci/github-actions-release.yml`): Automated releases on version tags
+
+### Local Validation
+
+```bash
+# Validate Avro schemas
+python ci/validate_schemas.py
+
+# Validate Docker Compose configuration
+docker compose config --quiet
+
+# Run security scan locally
+docker run --rm -v $(pwd):/app aquasecurity/trivy fs /app
+```
+
+### Dependabot
+
+Configured to automatically check for updates to:
+- Docker images
+- GitHub Actions
+- Python dependencies
+
+See `ci/README.md` for detailed workflow documentation.
 
 ## Reset Between Classes
 

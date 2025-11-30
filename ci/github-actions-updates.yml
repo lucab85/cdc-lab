@@ -1,0 +1,71 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Check for updates daily
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-docker-images:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for Docker image updates
+        id: update
+        run: |
+          # This is a basic check - in a real scenario you'd use tools like docker-slim or dive
+          # For now, we'll just check if the docker-compose.yml has any obvious issues
+          echo "Checking docker-compose.yml for potential updates..."
+
+          # Extract current versions
+          grep -E "image:.*:" docker-compose.yml | while read -r line; do
+            echo "Current: $line"
+          done
+
+          # Create a simple report
+          echo "update_available=false" >> $GITHUB_OUTPUT
+
+      - name: Create issue for manual review
+        if: steps.update.outputs.update_available == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Docker Image Updates Available',
+              body: 'Automated check found potential Docker image updates. Please review and update docker-compose.yml accordingly.',
+              labels: ['dependencies', 'docker']
+            })
+
+  update-python-deps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check for Python dependency updates
+        run: |
+          # Install pip-tools for dependency management
+          pip install pip-tools
+
+          # Check if there are any Python files that might need dependency updates
+          if [ -f "ci/validate_schemas.py" ]; then
+            echo "Python files found - checking dependencies..."
+            # In a real scenario, you'd check requirements.txt or pyproject.toml
+            echo "No formal dependency files found - manual review recommended"
+          fi

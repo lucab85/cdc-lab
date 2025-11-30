@@ -1,0 +1,68 @@
+name: Security and Dependency Check
+
+on:
+  schedule:
+    # Run weekly on Mondays
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for outdated Docker images
+        run: |
+          # Extract image versions from docker-compose.yml
+          grep "image:" docker-compose.yml | sed 's/.*image: //' | sort | uniq > images.txt
+
+          echo "Docker images used in this project:"
+          cat images.txt
+
+          # Check if any images are using 'latest' tag (not recommended for production)
+          if grep -q ":latest" images.txt; then
+            echo "⚠️  Warning: Some images are using 'latest' tag"
+            grep ":latest" images.txt
+          else
+            echo "✓ No images using 'latest' tag"
+          fi
+
+  python-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pip-audit
+          pip install -r <(echo "fastavro")  # Install the dependencies we know about
+
+      - name: Audit Python dependencies
+        run: |
+          # Check for known security vulnerabilities in Python packages
+          pip-audit --format json || true  # Don't fail the build, just report
