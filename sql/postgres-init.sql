@@ -25,3 +25,7 @@ INSERT INTO orders (order_id, customer_id, order_total, order_ts, status) VALUES
 (102, 2, 89.99, NOW() - INTERVAL '1 day', 'PROCESSING'),
 (103, 3, 42.00, NOW(), 'PENDING')
 ON CONFLICT (order_id) DO NOTHING;
+
+-- Enable REPLICA IDENTITY FULL for CDC to capture before/after states
+ALTER TABLE customers REPLICA IDENTITY FULL;
+ALTER TABLE orders REPLICA IDENTITY FULL;
